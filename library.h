@@ -50,23 +50,20 @@ public:
     Dynamixel_p2(int flow_control_pin);
     // UTILITY
     void begin(long baud_rate);
-    void PERMRAM(); //Function to setup EEPROM (Operation mode, protocol etc.)
+    void PERMRAM(); //Function sets all dynamixels to run in Position control mode
     void RAM(unsigned char id); // Function for initial values in the RAM AREA (Gain etc).
 
     // SETTERS
     void setTorqueEnable(unsigned char id, unsigned char value);
     void setPositionGainP(unsigned char id, unsigned int value);
     void setGoalPosition(unsigned char id, unsigned long value);
+    void setLedStatus(unsigned char id, unsigned char value);
 
     // GETTERS
-    unsigned char getID(unsigned char id);
+    unsigned char getID(char ID); // Get ID for any available dynamixels.
     unsigned char getTemperature(unsigned char id);
 
     // PING
     void PingServo(unsigned char id);
 };
-
-
-
-
 #endif //ADEM_MINIPROJECT_LIBRARY_H
