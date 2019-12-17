@@ -1,4 +1,5 @@
 #include "library.h"
+
 // Contains adresses of the RAM control table
 unsigned char addresses[31] = {0, 64, 65, 68, 69, 70, 76, 78, 80, 82, 84, 88, 90, 98, 100, 102, 104, 108, 112, 116, 120,
                                122, 123, 124, 126, 128, 132, 136, 140, 144, 146};
@@ -8,7 +9,8 @@ unsigned char prefBytes[31] = {0, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 3, 4, 4, 6
 
 
 // CONSTRUCTOR
-Dynamixel_p2::Dynamixel_p2(int flow_control_pin) { // flow control pin is defined by default at pin 13. But can be changed.
+Dynamixel_p2::Dynamixel_p2(
+        int flow_control_pin) { // flow control pin is defined by default at pin 13. But can be changed.
     _flow_control_pin = flow_control_pin; //It is standard to use _Variable when storing private variables.
     pinMode(_flow_control_pin, OUTPUT);
 }
@@ -27,9 +29,10 @@ void Dynamixel_p2::PingServo(unsigned char id) {
 
 }
 
-void Dynamixel_p2::PERMRAM(){ // Set all servos to PWM mode.
+void Dynamixel_p2::PERMRAM() { // Set all servos to PWM mode.
     unsigned char EEPROMPkg[16];
-    Dynamixel_p2::ConstructPacket(EEPROMPkg, 0xFE, 0x03, 3, 11); //Sets Operation mode to 0 (current control) for servo ID 1.
+    Dynamixel_p2::ConstructPacket(EEPROMPkg, 0xFE, 0x03, 3,
+                                  11); //Sets Operation mode to 0 (current control) for servo ID 1.
     Dynamixel_p2::TransmitPacket(EEPROMPkg);
 }
 
@@ -68,7 +71,7 @@ unsigned char Dynamixel_p2::getID(char ID) {
     return genericGet<unsigned char>(ID, 1, 7);
 }
 
-unsigned char Dynamixel_p2::getTemperature(unsigned char id){
+unsigned char Dynamixel_p2::getTemperature(unsigned char id) {
     return genericGet<unsigned char>(id, 1, 146);
 }
 
@@ -94,8 +97,7 @@ void Dynamixel_p2::CreateHeader(unsigned char *tx_packet, unsigned char id) {
     tx_packet[4] = id;
 }
 
-void Dynamixel_p2::CreateInstruction(unsigned char *tx_packet, unsigned char instruction)
-{
+void Dynamixel_p2::CreateInstruction(unsigned char *tx_packet, unsigned char instruction) {
     tx_packet[7] = instruction;
 }
 
@@ -121,8 +123,7 @@ void Dynamixel_p2::ConstructPacket(unsigned char *tx_packet, unsigned char devic
     if (instruction == READ) {
         Dynamixel_p2::Create4Params((unsigned int) params, tx_packet, address);
         param_size = 4;
-    }
-    else {
+    } else {
         param_size = ChooseParams(params, address, tx_packet);
     }
     unsigned short packet_length = CreateLength(tx_packet, param_size);
@@ -147,12 +148,14 @@ Dynamixel_p2::status_packet_info Dynamixel_p2::ReceiveStatusPacket() {
     status_packet_info status; //Naming a variable "status" of the type struct, containing, ID, error, parameters[], params.
     status.error = 0x00; // Default error. (Nothing wrong)
 
-    while (micros()<start_time+5000){
-        if (_serialport->available() >= 7) { //Waits until at least 8 bytes are available allowing to read header, lengths etc.
+    while (micros() < start_time + 5000) {
+        if (_serialport->available() >=
+            7) { //Waits until at least 8 bytes are available allowing to read header, lengths etc.
             //Serial.println("Scanning for header...");
             // Get rid of the header
             for (int i = 0; i < 2; ++i) {
-                if (_serialport->peek() == 0xFF) { //Peek allows you to see the next byte without removing it from the buffer.
+                if (_serialport->peek() ==
+                    0xFF) { //Peek allows you to see the next byte without removing it from the buffer.
                     _serialport->read();
                 } else {
                     status.error = 0x08; // 0x08 is not defined in the protocol. Consider it an unknown error.
@@ -182,7 +185,7 @@ Dynamixel_p2::status_packet_info Dynamixel_p2::ReceiveStatusPacket() {
             status.id = id;
 
             // Recreate RX-packet
-            unsigned char rx_packet[packet_length+7];
+            unsigned char rx_packet[packet_length + 7];
             rx_packet[0] = 0xFF;
             rx_packet[1] = 0xFF;
             rx_packet[2] = 0xFD;
@@ -209,8 +212,9 @@ Dynamixel_p2::status_packet_info Dynamixel_p2::ReceiveStatusPacket() {
                 status.parameters[k] = rx_packet[9 + k];
             }
 
-            unsigned short calc_crc = update_crc(0, rx_packet, packet_length+5);
-            if ((rx_packet[packet_length+5] != (calc_crc & 0xFF)) | (rx_packet[packet_length+6] != ((calc_crc >> 8) & 0xFF))){
+            unsigned short calc_crc = update_crc(0, rx_packet, packet_length + 5);
+            if ((rx_packet[packet_length + 5] != (calc_crc & 0xFF)) |
+                (rx_packet[packet_length + 6] != ((calc_crc >> 8) & 0xFF))) {
                 status.error = 0x03; // CRC error
             }
             return status;
@@ -221,7 +225,8 @@ Dynamixel_p2::status_packet_info Dynamixel_p2::ReceiveStatusPacket() {
     return status;
 }
 
-unsigned short Dynamixel_p2::update_crc(unsigned short crc_accum, unsigned char *data_blk_ptr, unsigned short data_blk_size) {
+unsigned short
+Dynamixel_p2::update_crc(unsigned short crc_accum, unsigned char *data_blk_ptr, unsigned short data_blk_size) {
     unsigned short i, j;
     unsigned short crc_table[256] = {
             0x0000, 0x8005, 0x800F, 0x000A, 0x801B, 0x001E, 0x0014, 0x8011,
@@ -321,16 +326,16 @@ void Dynamixel_p2::CreateCRC(unsigned char *tx_packet, unsigned short blk_size) 
     tx_packet[blk_size + 1] = (cal_crc >> 8) & 0x00FF;
 }
 
-template <typename T>
+template<typename T>
 T Dynamixel_p2::charArrayToValue(unsigned char *array) {
     T value = 0;
     for (int i = 0; i < sizeof(T); ++i) {
-        value += ((T) array[i] << i*8) & ((T) 0xFF << i*8);
+        value += ((T) array[i] << i * 8) & ((T) 0xFF << i * 8);
     }
     return value;
 }
 
-template <typename T>
+template<typename T>
 T Dynamixel_p2::genericGet(unsigned char id, unsigned short bytes, unsigned short address) {
     unsigned char tx_packet[14];
 
@@ -339,7 +344,8 @@ T Dynamixel_p2::genericGet(unsigned char id, unsigned short bytes, unsigned shor
 
     status_packet_info status = Dynamixel_p2::ReceiveStatusPacket(); // stores the needed info from return packet.
     //Serial.write(status.error); Is for testing purposes.
-    T receivedData = (T) Dynamixel_p2::charArrayToValue<T>(status.parameters); //Turns the char array back into a singular data type. Using template to eliminate need to specify data type.
+    T receivedData = (T) Dynamixel_p2::charArrayToValue<T>(
+            status.parameters); //Turns the char array back into a singular data type. Using template to eliminate need to specify data type.
 
     return receivedData;
 }

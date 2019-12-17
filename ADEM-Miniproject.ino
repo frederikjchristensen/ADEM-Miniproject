@@ -7,9 +7,8 @@ void setup() {
   MOTOR.begin(57600); // Constructs a class of Dynamixel servo called "MOTOR"
 
   delay(1000);
-  Serial.print(MOTOR.PingServo(0xFE));
+  
 }
-
 void loop() {
   
 }
