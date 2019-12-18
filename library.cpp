@@ -17,32 +17,54 @@ Dynamixel_p2::Dynamixel_p2(
 
 // PUBLIC
 void Dynamixel_p2::setTorqueEnable(unsigned char id, unsigned char value) {
-    unsigned char TorquePkg[13];
-    Dynamixel_p2::ConstructPacket(TorquePkg, id, 0x03, value, 0x40);
-    Dynamixel_p2::TransmitPacket(TorquePkg);
+    unsigned char Pkg[13];
+    Dynamixel_p2::ConstructPacket(Pkg, id, 0x03, value, 0x40);
+    Dynamixel_p2::TransmitPacket(Pkg);
+    status_packet_info status = Dynamixel_p2::ReceiveStatusPacket();
 }
 
 void Dynamixel_p2::PingServo(unsigned char id) {
-    unsigned char PingPkg[10];
-    Dynamixel_p2::ConstructPacket(PingPkg, id, 0x01, 0x00, 0x00);
-    Dynamixel_p2::TransmitPacket(PingPkg);
+    unsigned char Pkg[10];
+    Dynamixel_p2::ConstructPacket(Pkg, id, 0x01, 0x00, 0x00);
+    Dynamixel_p2::TransmitPacket(Pkg);
+    status_packet_info status = Dynamixel_p2::ReceiveStatusPacket();
+
+    if (status.error != 0x00) {
+        Serial.println("");
+        Serial.print("ID: ");
+        Serial.print(status.id, HEX);
+        Serial.print(" Error: ");
+        Serial.print(status.error, HEX);
+        Serial.println("");
+    }
+
+}
+
+void Dynamixel_p2::Reboot(unsigned char id) {
+    unsigned char Pkg[10];
+    Dynamixel_p2::ConstructPacket(Pkg, id, 0x01, 0x00, 0x00);
+    Dynamixel_p2::TransmitPacket(Pkg);
+    status_packet_info status = Dynamixel_p2::ReceiveStatusPacket();
 
 }
 
 void Dynamixel_p2::PERMRAM() { // Set all servos to PWM mode.
-    unsigned char EEPROMPkg[16];
-    Dynamixel_p2::ConstructPacket(EEPROMPkg, 0xFE, 0x03, 3,
+    unsigned char Pkg[16];
+    Dynamixel_p2::ConstructPacket(Pkg, 0xFE, 0x03, 3,
                                   11); //Sets Operation mode to 0 (current control) for servo ID 1.
-    Dynamixel_p2::TransmitPacket(EEPROMPkg);
+    Dynamixel_p2::TransmitPacket(Pkg);
+    status_packet_info status = Dynamixel_p2::ReceiveStatusPacket();
 }
 
 void Dynamixel_p2::RAM(unsigned char id) {
-    unsigned char RAMPkg[16];
-    Dynamixel_p2::ConstructPacket(RAMPkg, id, 0x03, 100, 0x54); // Position gain P = 100, default setup. for ID
-    Dynamixel_p2::TransmitPacket(RAMPkg);
+    unsigned char Pkg[16];
+    Dynamixel_p2::ConstructPacket(Pkg, id, 0x03, 100, 0x54); // Position gain P = 100, default setup. for ID
+    Dynamixel_p2::TransmitPacket(Pkg);
+    status_packet_info status = Dynamixel_p2::ReceiveStatusPacket();
 
-    Dynamixel_p2::ConstructPacket(RAMPkg, id, 0x03, 1, 0x40); // Enables torque for ID
-    Dynamixel_p2::TransmitPacket(RAMPkg);
+    Dynamixel_p2::ConstructPacket(Pkg, id, 0x03, 1, 0x40); // Enables torque for ID
+    Dynamixel_p2::TransmitPacket(Pkg);
+    status = Dynamixel_p2::ReceiveStatusPacket();
 
 }
 
@@ -50,6 +72,7 @@ void Dynamixel_p2::setLedStatus(unsigned char id, unsigned char value) {
     unsigned char Pkg[13];
     Dynamixel_p2::ConstructPacket(Pkg, id, WRITE, value, 0x41);
     Dynamixel_p2::TransmitPacket(Pkg);
+    status_packet_info status = Dynamixel_p2::ReceiveStatusPacket();
 }
 
 
@@ -57,17 +80,18 @@ void Dynamixel_p2::setPositionGainP(unsigned char id, unsigned int value) {
     unsigned char Pkg[14];
     Dynamixel_p2::ConstructPacket(Pkg, id, WRITE, value, 0x54);
     Dynamixel_p2::TransmitPacket(Pkg);
+    status_packet_info status = Dynamixel_p2::ReceiveStatusPacket();
 }
 
 
 void Dynamixel_p2::setGoalPosition(unsigned char id, unsigned long value) {
-    unsigned char GoalPkg[16];
-    Dynamixel_p2::ConstructPacket(GoalPkg, id, 0x03, value, 0x74);
-    Dynamixel_p2::TransmitPacket(GoalPkg);
+    unsigned char Pkg[16];
+    Dynamixel_p2::ConstructPacket(Pkg, id, 0x03, value, 0x74);
+    Dynamixel_p2::TransmitPacket(Pkg);
+    status_packet_info status = Dynamixel_p2::ReceiveStatusPacket();
 }
 
 unsigned char Dynamixel_p2::getID(char ID) {
-
     return genericGet<unsigned char>(ID, 1, 7);
 }
 
@@ -346,7 +370,20 @@ T Dynamixel_p2::genericGet(unsigned char id, unsigned short bytes, unsigned shor
     //Serial.write(status.error); Is for testing purposes.
     T receivedData = (T) Dynamixel_p2::charArrayToValue<T>(
             status.parameters); //Turns the char array back into a singular data type. Using template to eliminate need to specify data type.
-
-    return receivedData;
+    if (status.error != 0x00) {
+        Serial.println("");
+        Serial.print("ID: ");
+        Serial.print(status.id, HEX);
+        Serial.print(" Error: ");
+        Serial.print(status.error, HEX);
+        Serial.print(" Parameter: ");
+        Serial.println(receivedData);
+        Serial.println("");
+    }
+    if (status.error == 0x00) {
+        return receivedData;
+    } else {
+        return 0xFF;
+    }
 }
 

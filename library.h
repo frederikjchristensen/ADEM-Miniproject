@@ -52,6 +52,7 @@ public:
     void begin(long baud_rate);
     void PERMRAM(); //Function sets all dynamixels to run in Position control mode
     void RAM(unsigned char id); // Function for initial values in the RAM AREA (Gain etc).
+    void Reboot(unsigned char id);
 
     // SETTERS
     void setTorqueEnable(unsigned char id, unsigned char value);
