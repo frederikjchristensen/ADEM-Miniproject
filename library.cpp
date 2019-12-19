@@ -28,21 +28,11 @@ void Dynamixel_p2::PingServo(unsigned char id) {
     Dynamixel_p2::ConstructPacket(Pkg, id, 0x01, 0x00, 0x00);
     Dynamixel_p2::TransmitPacket(Pkg);
     status_packet_info status = Dynamixel_p2::ReceiveStatusPacket();
-
-    if (status.error != 0x00) {
-        Serial.println("");
-        Serial.print("ID: ");
-        Serial.print(status.id, HEX);
-        Serial.print(" Error: ");
-        Serial.print(status.error, HEX);
-        Serial.println("");
-    }
-
 }
 
 void Dynamixel_p2::Reboot(unsigned char id) {
     unsigned char Pkg[10];
-    Dynamixel_p2::ConstructPacket(Pkg, id, 0x01, 0x00, 0x00);
+    Dynamixel_p2::ConstructPacket(Pkg, id, 0x08, 0x00, 0x00);
     Dynamixel_p2::TransmitPacket(Pkg);
     status_packet_info status = Dynamixel_p2::ReceiveStatusPacket();
 
@@ -370,16 +360,6 @@ T Dynamixel_p2::genericGet(unsigned char id, unsigned short bytes, unsigned shor
     //Serial.write(status.error); Is for testing purposes.
     T receivedData = (T) Dynamixel_p2::charArrayToValue<T>(
             status.parameters); //Turns the char array back into a singular data type. Using template to eliminate need to specify data type.
-    if (status.error != 0x00) {
-        Serial.println("");
-        Serial.print("ID: ");
-        Serial.print(status.id, HEX);
-        Serial.print(" Error: ");
-        Serial.print(status.error, HEX);
-        Serial.print(" Parameter: ");
-        Serial.println(receivedData);
-        Serial.println("");
-    }
     if (status.error == 0x00) {
         return receivedData;
     } else {
